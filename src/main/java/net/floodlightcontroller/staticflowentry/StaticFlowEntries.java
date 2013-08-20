@@ -1,6 +1,7 @@
 package net.floodlightcontroller.staticflowentry;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -80,13 +81,14 @@ public class StaticFlowEntries {
      * @param entryName The name of the entry. Used to compute the cookie.
      */
     public static void initDefaultFlowMod(OFFlowMod fm, String entryName) {
+        //TODO Currently set cookie to 0, can be enhanced later.
         fm.setIdleTimeout((short) 0);   // infinite
         fm.setHardTimeout((short) 0);   // infinite
         fm.setBufferId(OFPacketOut.BUFFER_ID_NONE);
         fm.setCommand((short) 0);
         fm.setFlags((short) 0);
         fm.setOutPort(OFPort.OFPP_NONE.getValue());
-        fm.setCookie(computeEntryCookie(fm, 0, entryName));  
+        fm.setCookie(0);
         fm.setPriority(Short.MAX_VALUE);
     }
     
@@ -293,14 +295,20 @@ public class StaticFlowEntries {
             if (jp.getCurrentToken() != JsonToken.FIELD_NAME) {
                 throw new IOException("Expected FIELD_NAME");
             }
-            
+            ArrayList list = new ArrayList();
             String n = jp.getCurrentName();
             jp.nextToken();
             if (jp.getText().equals("")) 
                 continue;
             
-            if (n == "name")
-                entry.put(StaticFlowEntryPusher.COLUMN_NAME, jp.getText());
+            if (n == "cookie")
+                entry.put(StaticFlowEntryPusher.COLUMN_COOKIE, jp.getText());
+            else if (n == "buffer_id")
+                entry.put(StaticFlowEntryPusher.COLUMN_BUFFER, jp.getText());
+            else if (n == "hard_timeout")
+                entry.put(StaticFlowEntryPusher.COLUMN_HARD_TIMEOUT, jp.getText());
+            else if (n == "idle_timeout")
+                entry.put(StaticFlowEntryPusher.COLUMN_IDLE_TIMEOUT, jp.getText());
             else if (n == "switch")
                 entry.put(StaticFlowEntryPusher.COLUMN_SWITCH, jp.getText());
             else if (n == "actions")
@@ -311,7 +319,7 @@ public class StaticFlowEntries {
                 entry.put(StaticFlowEntryPusher.COLUMN_ACTIVE, jp.getText());
             else if (n == "wildcards")
                 entry.put(StaticFlowEntryPusher.COLUMN_WILDCARD, jp.getText());
-            else if (n == "ingress-port")
+            else if (n == "ingress_port")
                 entry.put(StaticFlowEntryPusher.COLUMN_IN_PORT, jp.getText());
             else if (n == "src-mac")
                 entry.put(StaticFlowEntryPusher.COLUMN_DL_SRC, jp.getText());
@@ -335,6 +343,14 @@ public class StaticFlowEntries {
                 entry.put(StaticFlowEntryPusher.COLUMN_TP_SRC, jp.getText());
             else if (n == "dst-port")
                 entry.put(StaticFlowEntryPusher.COLUMN_TP_DST, jp.getText());
+            else if (n == "out_port_list"){
+                list = jp.readValueAs(list.getClass());
+                entry.put(StaticFlowEntryPusher.COLUMN_OUTPORT_LIST, list);
+            }
+            else if (n == "delete_all")
+                entry.put(StaticFlowEntryPusher.COLUMN_DELETE_ALL, jp.getText());
+            else if (n == "out_port")
+                entry.put(StaticFlowEntryPusher.COLUMN_OUTPORT, jp.getText());
         }
         
         return entry;
@@ -405,7 +421,9 @@ public class StaticFlowEntries {
                 }
             }
         }
-        log.debug("action {}", actions);
+        if (log.isDebugEnabled()) {
+            log.debug("action {}", actions);
+        }
         
         flowMod.setActions(actions);
         flowMod.setLengthU(OFFlowMod.MINIMUM_LENGTH + actionsLength);

@@ -16,6 +16,7 @@ public class StaticFlowEntryWebRoutable implements RestletRoutable {
         router.attach("/json", StaticFlowEntryPusherResource.class);
         router.attach("/clear/{switch}/json", ClearStaticFlowEntriesResource.class);
         router.attach("/list/{switch}/json", ListStaticFlowEntriesResource.class);
+        router.attach("/packetout/json",PacketoutResource.class);
         return router;
     }
 
