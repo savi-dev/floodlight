@@ -1,6 +1,5 @@
 /**
-*    Copyright 2011, Big Switch Networks, Inc. 
-*    Originally created by David Erickson, Stanford University
+*    Copyright 2011, Ke Wang, savinetwork.ca 
 * 
 *    Licensed under the Apache License, Version 2.0 (the "License"); you may
 *    not use this file except in compliance with the License. You may obtain
@@ -18,9 +17,10 @@
 package net.floodlightcontroller.staticflowentry.web;
 
 import java.io.IOException;
+
 import java.util.Map;
 
-import org.restlet.resource.Delete;
+
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 import org.slf4j.Logger;
@@ -31,7 +31,6 @@ import net.floodlightcontroller.core.annotations.LogMessageCategory;
 import net.floodlightcontroller.core.annotations.LogMessageDoc;
 import net.floodlightcontroller.staticflowentry.StaticFlowEntries;
 import net.floodlightcontroller.staticflowentry.StaticFlowEntryPusher;
-//import net.floodlightcontroller.storage.IStorageSourceService;
 
 /**
  * Pushes a static flow entry to the storage source
@@ -39,9 +38,10 @@ import net.floodlightcontroller.staticflowentry.StaticFlowEntryPusher;
  *
  */
 @LogMessageCategory("Static Flow Pusher")
-public class StaticFlowEntryPusherResource extends ServerResource {
-    protected static Logger log = LoggerFactory.getLogger(StaticFlowEntryPusherResource.class);
-    
+public class PacketoutResource extends ServerResource /*implements IFloodlightModule*/{
+    protected static Logger log = LoggerFactory.getLogger(PacketoutResource.class);
+    //protected IFloodlightProviderService floodlightProvider;
+    //protected static Logger logger;
     /**
      * Checks to see if the user matches IP information without
      * checking for the correct ether-type (2048).
@@ -103,9 +103,11 @@ public class StaticFlowEntryPusherResource extends ServerResource {
             } else {
                 status = "Entry pushed";
             }
-            //storageSource.insertRowAsync(StaticFlowEntryPusher.TABLE_NAME, rowValues);
-            StaticFlowEntryPusher.getRows_install(rowValues);
+            StaticFlowEntryPusher.getRows_packetout(rowValues);
+            
             return ("{\"status\" : \"" + status + "\"}");
+            
+            
         } catch (IOException e) {
             log.error("Error parsing push flow mod request: " + fmJson, e);
             e.printStackTrace();
@@ -113,34 +115,5 @@ public class StaticFlowEntryPusherResource extends ServerResource {
         }
     }
     
-    @Delete
-    @LogMessageDoc(level="ERROR",
-        message="Error deleting flow mod request: {request}",
-        explanation="An invalid delete request was sent to static flow pusher",
-        recommendation="Fix the format of the static flow mod request")
-    public String del(String fmJson) {
-        /*IStorageSourceService storageSource =
-                (IStorageSourceService)getContext().getAttributes().
-                    get(IStorageSourceService.class.getCanonicalName());*/
-        String fmName = null;
-        if (fmJson == null) {
-            return "{\"status\" : \"Error! No data posted.\"}";
-        }
-        Map<String, Object> rowValues;
-        try {
-            rowValues = StaticFlowEntries.jsonToStorageEntry(fmJson);
-            //fmName = StaticFlowEntries.getEntryNameFromJson(fmJson);
-            if (rowValues == null) {
-                return "{\"status\" : \"Error deleting entry, no name provided\"}";
-            }
-            StaticFlowEntryPusher.getRows_delete(rowValues);
-        } catch (IOException e) {
-            log.error("Error deleting flow mod request: " + fmJson, e);
-            e.printStackTrace();
-            return "{\"status\" : \"Error deleting entry, see log for details\"}";
-        }
-        
-        //storageSource.deleteRowAsync(StaticFlowEntryPusher.TABLE_NAME, fmName);
-        return "{\"status\" : \"Entry " + fmName + " deleted\"}";
-    }
 }
+

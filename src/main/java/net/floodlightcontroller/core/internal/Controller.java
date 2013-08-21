@@ -942,6 +942,7 @@ public class Controller implements IFloodlightProviderService,
                 case FEATURES_REPLY:
                     if (log.isTraceEnabled())
                         log.trace("Features Reply from {}", sw);
+                    log.debug("Feature's reply received.");
                     
                     sw.setFeaturesReply((OFFeaturesReply) m);
                     if (state.hsState.equals(HandshakeState.HELLO)) {
@@ -1074,6 +1075,7 @@ public class Controller implements IFloodlightProviderService,
                     }
                     break;
                 case PORT_STATUS:
+                    log.debug("Portstatus received.");
                     // We want to update our port state info even if we're in 
                     // the slave role, but we only want to update storage if 
                     // we're the master (or equal).

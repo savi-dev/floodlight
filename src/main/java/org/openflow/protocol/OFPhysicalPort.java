@@ -225,7 +225,9 @@ public class OFPhysicalPort {
     public short getPortNumber() {
         return portNumber;
     }
-
+    public long getPortNumberlong() {
+        return portNumber;
+    }
     /**
      * @param portNumber the portNumber to set
      */
