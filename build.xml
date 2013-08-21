@@ -44,8 +44,8 @@
     <property name="thrift.dir" value="${basedir}/src/main/thrift"/>
     <property name="thrift.out.dir" value="lib/gen-java"/>
     <property name="thrift.package" value="net/floodlightcontroller/packetstreamer/thrift"/>
-    <property name="ant.build.javac.source" value="1.6"/>
-    <property name="ant.build.javac.target" value="1.6"/>
+    <property name="ant.build.javac.source" value="1.7"/>
+    <property name="ant.build.javac.target" value="1.7"/>
     <property name="lib" location="lib"/>
 
     <patternset id="lib">
@@ -64,6 +64,9 @@
         <include name="concurrentlinkedhashmap-lru-1.2.jar"/>
         <include name="jython-2.5.2.jar"/>
         <include name="libthrift-0.7.0.jar"/>
+        <include name="httpclient-4.2.5.jar"/>
+        <include name="httpcore-4.2.4.jar"/>
+        <include name="commons-logging-1.1.1.jar"/>
     </patternset>
 
     <path id="classpath">
