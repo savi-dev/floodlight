@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import net.floodlightcontroller.core.annotations.LogMessageCategory;
 import net.floodlightcontroller.core.annotations.LogMessageDoc;
+import net.floodlightcontroller.staticflowentry.JanusPusher;
 import net.floodlightcontroller.staticflowentry.StaticFlowEntries;
-import net.floodlightcontroller.staticflowentry.StaticFlowEntryPusher;
 
 /**
  * Pushes a static flow entry to the storage source
@@ -51,7 +51,7 @@ public class PacketoutResource extends ServerResource /*implements IFloodlightMo
      */
     private boolean checkMatchIp(Map<String, Object> rows) {
         boolean matchEther = false;
-        String val = (String) rows.get(StaticFlowEntryPusher.COLUMN_DL_TYPE);
+        String val = (String) rows.get(JanusPusher.COLUMN_DL_TYPE);
         if (val != null) {
             int type = 0;
             // check both hex and decimal
@@ -65,10 +65,10 @@ public class PacketoutResource extends ServerResource /*implements IFloodlightMo
             if (type == 2048) matchEther = true;
         }
         
-        if ((rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_DST) || 
-                rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_SRC) ||
-                rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_PROTO) ||
-                rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_TOS)) &&
+        if ((rows.containsKey(JanusPusher.COLUMN_NW_DST) || 
+                rows.containsKey(JanusPusher.COLUMN_NW_SRC) ||
+                rows.containsKey(JanusPusher.COLUMN_NW_PROTO) ||
+                rows.containsKey(JanusPusher.COLUMN_NW_TOS)) &&
                 (matchEther == false))
             return false;
         
@@ -103,7 +103,7 @@ public class PacketoutResource extends ServerResource /*implements IFloodlightMo
             } else {
                 status = "Entry pushed";
             }
-            StaticFlowEntryPusher.getRows_packetout(rowValues);
+            JanusPusher.getRows_packetout(rowValues);
             
             return ("{\"status\" : \"" + status + "\"}");
             

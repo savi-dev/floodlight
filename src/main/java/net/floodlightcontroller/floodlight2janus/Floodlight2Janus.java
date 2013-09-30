@@ -6,7 +6,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -47,6 +49,8 @@ public class Floodlight2Janus implements IOFMessageListener, IFloodlightModule {
     protected IFloodlightProviderService floodlightProvider;
     protected static Logger logger;
     private String janusiphost = null;
+    static LinkedList<StringEntity> postqueue = new LinkedList<StringEntity> ();
+    static LinkedList<StringEntity> putqueue = new LinkedList<StringEntity> ();
     @Override
     public String getName() {
         return "Floodlight2Janus";
@@ -102,6 +106,15 @@ public class Floodlight2Janus implements IOFMessageListener, IFloodlightModule {
         floodlightProvider.addOFMessageListener(OFType.PACKET_IN, this);
         floodlightProvider.addOFMessageListener(OFType.PORT_STATUS, this);
         floodlightProvider.addOFMessageListener(OFType.FEATURES_REPLY, this);
+        
+        RestcallThread restpostthread1 = new RestcallThread(postqueue,janusiphost,0);
+        RestcallThread restputthread1 = new RestcallThread(putqueue,janusiphost,1);
+        
+        Thread postthread1 = new Thread(restpostthread1,"postthread1");
+        Thread putthread1 = new Thread(restputthread1,"putthread1");
+        
+        postthread1.start();
+        putthread1.start();
     }
 
     @Override
@@ -128,36 +141,8 @@ public class Floodlight2Janus implements IOFMessageListener, IFloodlightModule {
                          +",\"datapath_id\":"+sw.getId()+",\"buffer_id\":"+pi.getBufferId()+",\"of_event_id\":"+1+",\"dl_src\":\""
                         +eth.getSourceMAC()+"\",\"dl_dst\":\""+eth.getDestinationMAC()+"\"}}");
                 input.setContentType("application/json");
-                httppost.setEntity(input);
-                HttpResponse response,response2;
-                try {
-                    response2 = httpclient.execute(httppost);
-                    HttpEntity entity = response2.getEntity();
-                    if (entity != null) {
-                        InputStream instream = input.getContent();
-                        BufferedReader in = new BufferedReader(new InputStreamReader(instream));
-                        try {
-                            String line;
-                            while((line = in.readLine())!=null){
-                                System.out.println(line);
-                            }
-                            System.out.println(response2.getStatusLine());
-                            if (logger.isDebugEnabled()) {
-                                logger.debug("A response from rest has been received");
-                            }
-                        } finally {
-                            instream.close();
-                        }
-                    }
-                } catch (ClientProtocolException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+                postqueue.offer(input);
             } catch (UnsupportedEncodingException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
              
@@ -167,9 +152,7 @@ public class Floodlight2Janus implements IOFMessageListener, IFloodlightModule {
              byte reason = portstatus.getReason();
              short port_no = portstatus.getDesc().getPortNumber();
              int reason_id;
-             boolean flag = false;//false indicates put, while true indicates post 
-             HttpPut portstatus_put = new HttpPut("http://"+janusiphost+"/v1.0/events/0");
-             HttpPost portstatus_post = new HttpPost("http://"+janusiphost+"/v1.0/events/0");
+             boolean flag = false;
              if(reason==(byte)OFPortReason.OFPPR_ADD.ordinal()){
                  if (logger.isDebugEnabled()) {
                      logger.debug("port added {}",port_no);
@@ -203,40 +186,16 @@ public class Floodlight2Janus implements IOFMessageListener, IFloodlightModule {
                             ",\"datapath_id\":"+sw.getId()+",\"reason\":"+reason_id+",\"of_event_id\":"+3+"}}");
                 
             portstatusinput.setContentType("application/json");
-            portstatus_put.setEntity(portstatusinput);
-            portstatus_post.setEntity(portstatusinput);
             HttpResponse portresponse = null;
             if (logger.isDebugEnabled()) {
                 logger.debug("Fowarding PORT STATUS to JANUS: {}",portstatusinput);
             }
-            try {
-                if(flag){
-                    portresponse = httpclient.execute(portstatus_put);
-                }
-                else{
-                    portresponse = httpclient.execute(portstatus_post);
-                }
-                HttpEntity portentity = portresponse.getEntity();
-                if (portentity != null) {
-                     InputStream instream = portstatusinput.getContent();
-                     BufferedReader in = new BufferedReader(new InputStreamReader(instream));
-                     try {
-                         String line;
-                         while((line = in.readLine())!=null){
-                             System.out.println(line);
-                         }
-                         System.out.println(portresponse.getStatusLine());
-                         if (logger.isDebugEnabled()) {
-                             logger.debug("A response from rest has been received");
-                         }
-                     } finally {
-                     instream.close();
-                     }
-                     }
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            if(flag){
+			    putqueue.offer(portstatusinput);
+			}
+			else{
+			    postqueue.offer(portstatusinput);
+			}
              } catch (UnsupportedEncodingException e1) {
                  // TODO Auto-generated catch block
                  e1.printStackTrace();
@@ -247,7 +206,7 @@ public class Floodlight2Janus implements IOFMessageListener, IFloodlightModule {
              OFFeaturesReply featreply = (OFFeaturesReply) msg;
              HttpPut httpput = new HttpPut("http://"+janusiphost+"/v1.0/events/0");
              HttpResponse featresponse;
-             
+             logger.info("preparing to send feature's reply.");
              StringEntity featinput;
             try {
                 int ports_no = featreply.getPorts().size();
@@ -258,35 +217,11 @@ public class Floodlight2Janus implements IOFMessageListener, IFloodlightModule {
                 featinput = new StringEntity("{\"event\":{\"ports\":"+activeports+
                         ",\"datapath_id\":"+featreply.getDatapathId()+",\"of_event_id\":"+0+"}}");
             featinput.setContentType("application/json");
-            httpput.setEntity(featinput);
+            putqueue.offer(featinput);
+            logger.info("{}",putqueue.size());
             if (logger.isDebugEnabled()) {
                 logger.debug("Fowarding FEATURES REPLY to JANUS: {}","{\"event\":{\"ports\":"+activeports+
                     ",\"datapath_id\":"+featreply.getDatapathId()+",\"of_event_id\":"+0+"}}");
-            }
-            try {
-                featresponse = httpclient.execute(httpput);
-                logger.info("Fowarding FEATURES REPLY to JANUS: {}",featinput);
-                HttpEntity featentity = featresponse.getEntity();
-                if (featentity != null) {
-                     InputStream instream = featinput.getContent();
-                     BufferedReader in = new BufferedReader(new InputStreamReader(instream));
-                     try {
-                         String line;
-                         while((line = in.readLine())!=null){
-                             System.out.println(line);
-                         }
-                         System.out.println(featresponse.getStatusLine());
-                         if (logger.isDebugEnabled()) {
-                             logger.debug("A response from rest has been received");
-                         }
-                     } finally {
-                     instream.close();
-                     }
-                     }
-                
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
             }
             } catch (UnsupportedEncodingException e) {
                 // TODO Auto-generated catch block

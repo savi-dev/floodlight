@@ -25,9 +25,9 @@ JVM_OPTS="$JVM_OPTS -Dpython.security.respectJavaAccessibility=false"
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
-    <logger name="org" level="WARN"/>
-    <logger name="LogService" level="WARN"/> <!-- Restlet access logging -->
-    <logger name="net.floodlightcontroller" level="INFO"/>
+    <logger name="org" level="ERROR"/>
+    <logger name="LogService" level="ERROR"/> <!-- Restlet access logging -->
+    <logger name="net.floodlightcontroller" level="ERROR"/>
     <logger name="net.floodlightcontroller.logging" level="ERROR"/>
 </configuration>
 EOF_LOGBACK

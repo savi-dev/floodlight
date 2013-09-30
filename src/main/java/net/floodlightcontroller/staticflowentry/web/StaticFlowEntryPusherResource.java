@@ -29,8 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import net.floodlightcontroller.core.annotations.LogMessageCategory;
 import net.floodlightcontroller.core.annotations.LogMessageDoc;
+import net.floodlightcontroller.staticflowentry.JanusPusher;
 import net.floodlightcontroller.staticflowentry.StaticFlowEntries;
-import net.floodlightcontroller.staticflowentry.StaticFlowEntryPusher;
 //import net.floodlightcontroller.storage.IStorageSourceService;
 
 /**
@@ -51,7 +51,7 @@ public class StaticFlowEntryPusherResource extends ServerResource {
      */
     private boolean checkMatchIp(Map<String, Object> rows) {
         boolean matchEther = false;
-        String val = (String) rows.get(StaticFlowEntryPusher.COLUMN_DL_TYPE);
+        String val = (String) rows.get(JanusPusher.COLUMN_DL_TYPE);
         if (val != null) {
             int type = 0;
             // check both hex and decimal
@@ -65,10 +65,10 @@ public class StaticFlowEntryPusherResource extends ServerResource {
             if (type == 2048) matchEther = true;
         }
         
-        if ((rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_DST) || 
-                rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_SRC) ||
-                rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_PROTO) ||
-                rows.containsKey(StaticFlowEntryPusher.COLUMN_NW_TOS)) &&
+        if ((rows.containsKey(JanusPusher.COLUMN_NW_DST) || 
+                rows.containsKey(JanusPusher.COLUMN_NW_SRC) ||
+                rows.containsKey(JanusPusher.COLUMN_NW_PROTO) ||
+                rows.containsKey(JanusPusher.COLUMN_NW_TOS)) &&
                 (matchEther == false))
             return false;
         
@@ -104,7 +104,7 @@ public class StaticFlowEntryPusherResource extends ServerResource {
                 status = "Entry pushed";
             }
             //storageSource.insertRowAsync(StaticFlowEntryPusher.TABLE_NAME, rowValues);
-            StaticFlowEntryPusher.getRows_install(rowValues);
+            JanusPusher.getRows_install(rowValues);
             return ("{\"status\" : \"" + status + "\"}");
         } catch (IOException e) {
             log.error("Error parsing push flow mod request: " + fmJson, e);
@@ -133,7 +133,7 @@ public class StaticFlowEntryPusherResource extends ServerResource {
             if (rowValues == null) {
                 return "{\"status\" : \"Error deleting entry, no name provided\"}";
             }
-            StaticFlowEntryPusher.getRows_delete(rowValues);
+            JanusPusher.getRows_delete(rowValues);
         } catch (IOException e) {
             log.error("Error deleting flow mod request: " + fmJson, e);
             e.printStackTrace();
