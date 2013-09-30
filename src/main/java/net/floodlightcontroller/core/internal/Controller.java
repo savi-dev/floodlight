@@ -948,15 +948,16 @@ public class Controller implements IFloodlightProviderService,
                     if (state.hsState.equals(HandshakeState.HELLO)) {
                         sendFeatureReplyConfiguration();
                         state.hsState = HandshakeState.FEATURES_REPLY;
-                        // uncomment to enable "dumb" switches like cbench
-                        // state.hsState = HandshakeState.READY;
-                        // addSwitch(sw);
+                        //uncomment to enable "dumb" switches like cbench
+                        //state.hsState = HandshakeState.READY;
+                        //addSwitch(sw);
                     } else {
                         // return results to rest api caller
                         sw.deliverOFFeaturesReply(m);
                         // update database */
                         updateActiveSwitchInfo(sw);
                     }
+                    shouldHandleMessage = true;
                     break;
                 case GET_CONFIG_REPLY:
                     if (log.isTraceEnabled())
@@ -976,7 +977,7 @@ public class Controller implements IFloodlightProviderService,
                                  sw, cr.getMissSendLength() & 0xffff);
                     }
                     state.hasGetConfigReply = true;
-                    checkSwitchReady();
+                    //checkSwitchReady();
                     break;
                 case VENDOR:
                     shouldHandleMessage = handleVendorMessage((OFVendor)m);
@@ -1091,11 +1092,14 @@ public class Controller implements IFloodlightProviderService,
                     break;
             }
             
+            if (sw == null){
+            	log.debug("The switch is null");
+            }
             if (shouldHandleMessage) {
                 sw.getListenerReadLock().lock();
                 try {
                     if (sw.isConnected()) {
-                        if (!state.hsState.equals(HandshakeState.READY)) {
+                        if ((!state.hsState.equals(HandshakeState.READY))&&(m.getType() != OFType.FEATURES_REPLY)) {
                             log.debug("Ignoring message type {} received " + 
                                       "from switch {} before switch is " + 
                                       "fully configured.", m.getType(), sw);
